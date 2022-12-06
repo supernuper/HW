@@ -5,16 +5,17 @@
 #include <string.h>
 #include <stddef.h>
 
-struct course_item_t{
+
+typedef struct course_item_t {
     char* course_name;
     int grade;
-};
+}course_item;
 
-struct student_item_t{
+typedef struct student_item_t{
     int id;
     char* name;
     struct list *course_list;
-};
+}student_item;
 
 
 struct grades {
@@ -23,35 +24,56 @@ struct grades {
 };
  
 
-element_clone_t elem_clone_s(struct student_item_t *student_tp, 
-                 struct student_item_t **student_elem)
+element_clone_t elem_clone_s(void *element, void **output)
 {
-*student_elem=(struct student_item_t*)malloc(sizeof(**student_elem));
-if(*student_elem==NULL)return 1;
-*student_elem=student_tp; //FIXME
+student_item* student_elem = (student_item*)element;
+student_item** student = (student_item**)output;
+*student=(struct student_item*)malloc(sizeof(student_item));
+if(*student==NULL){
+    return 1;
+}
+(*student)->name=(char*)malloc(sizeof((strlen(student_elem->name))+1));
+if((*student)->name==NULL){
+    return 1;
+}
+
+(*student)->name=student_elem->name;
+(*student)->id=student_elem->id;
+(*student)->course_list=student_elem->course_list;
 return 0;
 };
 
-element_clone_t elem_clone_c(struct course_item_t *course_tp,
-                 struct course_item_t **course_elem)
+element_clone_t elem_clone_c(void *element, void **output)
 {
-*course_elem=(struct course_item_t*)malloc(sizeof(**course_elem));
-if(*course_elem==NULL)return 1;
-*course_elem=course_tp; //FIXME
+course_item* course_elem = (course_item*)element;
+course_item** course = (course_item**)output;
+*course=(course_item*)malloc(sizeof(course_item));
+if(*course==NULL){
+    return 1;
+}
+(*course)->course_name=(char*)malloc(sizeof(*(course_elem->course_name)+1));
+if((*course)->course_name==NULL){
+    return 1;
+}
+///if(*course_elem==NULL)return;
+*course=course_elem; //FIXME
+*(*course)->course_name=*course_elem->course_name;
 return 0;
 };
 
 
-element_destroy_t elem_destroy_s(struct student_item_t *student_tp){
-    list_destroy(student_tp->course_list);
-    free(student_tp);
+element_destroy_t elem_destroy_s(void *element){
+    student_item* student = (student_item*)element;
+    list_destroy(student->course_list);
+    free(student->name);
+    free(student);
 };
 
-element_destroy_t elem_destroy_c(struct course_item_t *course_tp){
-    free(course_tp);
+element_destroy_t elem_destroy_c(void *element){
+    course_item* course = (course_item*)element;
+    free(course->course_name);
+    free(course);
 };
-
-
 
 struct grades* grades_init(){
     struct grades* grades_ds;
@@ -75,7 +97,6 @@ void grades_destroy(struct grades *grades)
     struct iterator* next = list_begin(grades->student_list);  
     struct student_item_t *student; 
    // size_t elem_num = list_size(grades->student_list);
-
    // for(int i = 1 ; i <=elem_num ; i++ ){
     while(next != NULL){
     student = list_get(next);
